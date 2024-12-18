@@ -5,15 +5,20 @@ all clusters as a list of lists.
 """
     
 # Settings
-MAXTOUR = 10
-MAXPATH = 10
+MAXTOUR = 10 # Max number of nodes per cluster
+MAXPATH = 10 # Max weight of edge within cluster
 
 
 class Node: 
     def __init__(self, id, edges):
         self.id = id
-        self.edges = [edge for edge in edges if edge['start'] == self.id]
+        self.in_edges = [edge for edge in edges if edge['end'] == self.id]
+        self.out_edges = [edge for edge in edges if edge['start'] == self.id]
         
+        
+        def __eq__(self, other):
+            return isinstance(other, Node) and self.id == other.id
+
 
 class Supernode:
     def __init__(self, itinerary, incoming, outgoing):
@@ -25,12 +30,12 @@ class Supernode:
 
 class Data:
     # Sample edges
-    sample_edges = [{'start': 1,'end': 2,'weight': 1},
-                    {'start': 1,'end': 3,'weight': 2},
-                    {'start': 2,'end': 1,'weight': 3}, 
-                    {'start': 2,'end': 3,'weight': 4},
-                    {'start': 3,'end': 1,'weight': 1},
-                    {'start': 3,'end': 2,'weight': 3}
+    sample_edges = [{'id': (1, 2), 'start': 1, 'end': 2,'weight': 1},
+                    {'id': (1, 3), 'start': 1, 'end': 3,'weight': 2},
+                    {'id': (2, 1), 'start': 2, 'end': 1,'weight': 3}, 
+                    {'id': (2, 3), 'start': 2, 'end': 3,'weight': 4},
+                    {'id': (3, 1), 'start': 3, 'end': 1,'weight': 1},
+                    {'id': (3, 2), 'start': 3, 'end': 2,'weight': 3}
                    ]
 
    
@@ -39,16 +44,16 @@ def main(sites):
     nodes = [Node(site.id, edges) for site in sites] 
     
     # Get list of nodes sorted by number of edges less than maxpath
-    center_nodes = []
+    nodes_by_neighbors = []
     for node in nodes:
-        connected_nodes = [edge['end'] for edge in node.edges 
+        connected_nodes = [edge['end'] for edge in node.out_edges 
                            if edge['weight'] <= MAXPATH] 
-        center_nodes.append({node.id: connected_nodes})
-    center_nodes.sort(key = lambda x: len(list(x.values())[0]))
+        nodes_by_neighbors.append({node.id: connected_nodes})
+    nodes_by_neighbors.sort(key = lambda x: len(list(x.values())[0]))
     
     # Create clusters from list
     clusters = []
-    for node in center_nodes:
+    for node in nodes_by_neighbors:
         id = list(node.keys())[0] 
         if not any(id == n.id for cluster in clusters for n in cluster):
             clusters.append(cluster(id, clusters, nodes))
@@ -65,7 +70,7 @@ def main(sites):
         tree = spanning_tree(cluster) # Chu-Liu/Edmonds' algorithm
         cluster_tour = get_tour(tree, cluster, edges) # Generate tour starting with root node
         tours.append(cluster_tour)
-    itinerary = get_itinerary(tours, edges)
+    itinerary = [[e['id'] for e in tour]for tour in tours]
     
     return itinerary
 
@@ -81,7 +86,7 @@ def cluster(id, clusters, nodes):
         return set()
     
     # Initialize new cluster
-    new_cluster ={node}  
+    new_cluster = {node}  
     
     # Recursively add connected nodes
     for next_node_id in node.value(): 
@@ -97,7 +102,7 @@ def divide(cluster, groups=None):
    
     # Initialize sibling groups
     if not groups:
-        lowest_nodes = [n for n in cluster if not any(o.id in n.edges for o in cluster)]
+        lowest_nodes = [n for n in cluster if not any(o.edge in n.in_edges for o in cluster)] # Refactor this
         groups = [[p]+[n for n in lowest_nodes if n.id in p.edges]for p in cluster]    
     
     # Delete too-large clusters
@@ -281,9 +286,6 @@ def get_tour(tree, cluster, edges):
     itinerary = [n for branch in branches for n in branch]
     return itinerary
 
-
-def get_itinerary(tours, edges):
-    pass
             
 test_sites = [1, 2, 3, 4]
        
