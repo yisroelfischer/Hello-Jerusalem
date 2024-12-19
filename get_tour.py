@@ -1,7 +1,8 @@
 """ 
-Divides a list of nodes into clusters of a manageable size, generates an approximate TSP solution 
-for each cluster using a modified version of Christofides' algorithm, and returns a 'supertour' of 
-all clusters as a list of lists.
+Return an itinerary consisting of a list of short tours.
+
+Arg:
+nodes -- a list of IDs for the attrictions to be visited on the tour
 """
     
 # Settings
@@ -10,10 +11,11 @@ MAXPATH = 10 # Max weight of edge within cluster
 
 
 class Node: 
+    
     def __init__(self, id, edges):
         self.id = id
-        self.in_edges = [edge for edge in edges if edge['end'] == self.id]
-        self.out_edges = [edge for edge in edges if edge['start'] == self.id]
+        self.in_edges = [edge for edge in edges if edge['end'] == self.id] # Incoming edges
+        self.out_edges = [edge for edge in edges if edge['start'] == self.id] # outgoing edges
         
         
         def __eq__(self, other):
@@ -21,6 +23,8 @@ class Node:
 
 
 class Supernode:
+    """ Temporary object representing a group of nodes for use in the algorithm """
+
     def __init__(self, itinerary, incoming, outgoing):
         self.id = itinerary[0]['start']
         self.itinerary = itinerary
@@ -39,9 +43,9 @@ class Data:
                    ]
 
    
-def main(sites):
+def main(nodes):
     edges = Data.sample_edges
-    nodes = [Node(site.id, edges) for site in sites] 
+    nodes = [Node(site.id, edges) for site in nodes] 
     
     # Get list of nodes sorted by number of edges less than maxpath
     nodes_by_neighbors = []
@@ -51,12 +55,12 @@ def main(sites):
         nodes_by_neighbors.append({node.id: connected_nodes})
     nodes_by_neighbors.sort(key = lambda x: len(list(x.values())[0]))
     
-    # Create clusters from list
+    # Create clusters of nearby nodes
     clusters = []
     for node in nodes_by_neighbors:
         id = list(node.keys())[0] 
         if not any(id == n.id for cluster in clusters for n in cluster):
-            clusters.append(cluster(id, clusters, nodes))
+            clusters.append(cluster(id, clusters, nodes)) # cluster() returns a list of node objects
     
     # Divide clusters into tours less than maxtour
     for cluster in clusters:
@@ -75,22 +79,29 @@ def main(sites):
     return itinerary
 
 
-def cluster(id, clusters, nodes): 
-    """Recursively gather all nearby nodes"""
+def cluster(root, clusters, nodes): 
+    """ Return a list of all nodes reachable from a given root node using only edges smaller than MAXPATH.
+
+    Positional arguments:
+    root -- id of the root node.
+    clusters -- list of clusters already created. Each cluster is a list of node objects
+    nodes -- list of all node objects in the graph.
+    """
     
-    # Find starting node
-    node = next(n for n in nodes if id == n.id)
+    # Get starting node
+    node = next(n for n in nodes if n.id == root)
     
-    # Check if node is already clustered
+    # Return empty set if node is already in a cluster
     if any(node in c for c in clusters): 
         return set()
     
     # Initialize new cluster
     new_cluster = {node}  
     
-    # Recursively add connected nodes
-    for next_node_id in node.value(): 
-        next_node = next((n for n in nodes if n.id == next_node_id), None)
+    # Recursively add neighboring nodes
+    neighbors = [edge['end'] for edge in node.out_edges]
+    for neighbor in neighbors: 
+        next_node = next((n for n in nodes if n.id == neighbor), None)
         if not any(next_node in c for c in clusters):
             new_cluster.update(cluster(next_node, clusters, nodes))
     
@@ -98,21 +109,49 @@ def cluster(id, clusters, nodes):
 
 
 def divide(cluster, groups=None):     
-    """ Divide cluster into largest possible subclusters which are less than maxtour """
-   
+    """ Divide cluster into largest possible subclusters which are less than maxtour."""
     # Initialize sibling groups
     if not groups:
-        lowest_nodes = [n for n in cluster if not any(o.edge in n.in_edges for o in cluster)] # Refactor this
-        groups = [[p]+[n for n in lowest_nodes if n.id in p.edges]for p in cluster]    
+        # Get list of nodes which don't lead to any others in the cluster
+        lowest_nodes = []
+        for node in cluster:
+            neighbors = [edge['end'] for edge in node.out_edges if edge['weight'] <= MAXPATH]
+            if not neighbors:
+                lowest_nodes.append(node) 
+
+        # Create a group of any node leading to an end node, along with its children
+        for node in cluster:
+            new_group = [end_node for end_node in lowest_nodes if edge['end'] == end_node.id for edge in node.out_edges] # Children in end_nodes
+            if new_group:
+                new_group.insert(0, node)
+                groups.append(new_group)
+
     
     # Delete too-large clusters
     groups = [g for g in groups if len(g) <= MAXTOUR]  
     
     # Recursively combine groups
     recurse = False
-    ungrouped = [n for n in cluster if not any(n.id == o.id for group in groups for o in group)]
     
-    for p in ungrouped:
+    for node in cluster:
+        parent = next((n for n in cluster if any(n.id == edge['start'] for edge in node.in_edges)), None)
+        if not parent: # This is the root node
+            continue
+        node_group = next((group for group in groups if node in group), None)
+        parent_group = next((group for group in groups if parent in group), None)
+
+        if node_group == parent_group:
+            continue
+        if node_group and not parent_group: 
+            node_group.insert(0, parent)
+        if parent_group and not node_group:
+            parent_group.append(node)
+        if node_group and parent_group:
+            
+
+                    
+    
+            
         siblings = [p] +[g for g in groups if g[0].id in p.edges]
         
         for s in siblings:
@@ -287,7 +326,7 @@ def get_tour(tree, cluster, edges):
     return itinerary
 
             
-test_sites = [1, 2, 3, 4]
+test_ = [1, 2, 3, 4]
        
 if __name__ == '__main__':
-    main(test_sites)
+    main(test_)
