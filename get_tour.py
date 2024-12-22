@@ -45,28 +45,38 @@ class Data:
    
 def main(nodes):
     edges = Data.sample_edges
-    nodes = [Node(site.id, edges) for site in nodes] 
+    nodes = [Node(site, edges) for site in nodes] 
+
+    # Validate edge format
+    keys = ['id', 'start', 'end', 'weight']
+    for edge in edges:
+        if not isinstance(edge, dict) or not all(key in edge for key in keys):
+            print(f'Error: edge {edge} is not formatted correctly')
+            return 1
     
     # Get list of nodes sorted by number of edges less than maxpath
     nodes_by_neighbors = []
     for node in nodes:
         connected_nodes = [edge['end'] for edge in node.out_edges 
                            if edge['weight'] <= MAXPATH] 
-        nodes_by_neighbors.append({node.id: connected_nodes})
-    nodes_by_neighbors.sort(key = lambda x: len(list(x.values())[0]))
+        nodes_by_neighbors.append((node.id, connected_nodes))
+    nodes_by_neighbors.sort(key = lambda x: len(x[1]))
     
     # Create clusters of nearby nodes
     clusters = []
     for node in nodes_by_neighbors:
-        id = list(node.keys())[0] 
+        id = node[0] 
         if not any(id == n.id for cluster in clusters for n in cluster):
             clusters.append(cluster(id, clusters, nodes)) # cluster() returns a list of node objects
     
     # Divide clusters into tours less than maxtour
+    new_clusters = []
     for cluster in clusters:
         if len(cluster) > MAXTOUR:
-            clusters.extend(divide(cluster))
-            clusters.remove(cluster)
+            new_clusters.extend(divide(cluster))
+        else:
+            new_clusters.remove(cluster)
+    clusters = new_clusters
     
     # Generate tour of each neighborhood 
     tours = []
@@ -80,7 +90,7 @@ def main(nodes):
 
 
 def cluster(root, clusters, nodes): 
-    """ Return a list of all nodes reachable from a given root node using only edges smaller than MAXPATH.
+    """ Return a list of all nodes reachable from a given root using edges smaller than MAXPATH.
 
     Positional arguments:
     root -- id of the root node.
@@ -105,73 +115,46 @@ def cluster(root, clusters, nodes):
         if not any(next_node in c for c in clusters):
             new_cluster.update(cluster(next_node, clusters, nodes))
     
-    return new_cluster        
+    return list(new_cluster)        
 
 
-def divide(cluster, groups=None):     
-    """ Divide cluster into largest possible subclusters which are less than maxtour."""
-    # Initialize sibling groups
-    if not groups:
-        # Get list of nodes which don't lead to any others in the cluster
-        lowest_nodes = []
-        for node in cluster:
-            neighbors = [edge['end'] for edge in node.out_edges if edge['weight'] <= MAXPATH]
-            if not neighbors:
-                lowest_nodes.append(node) 
-
-        # Create a group of any node leading to an end node, along with its children
-        for node in cluster:
-            new_group = [end_node for end_node in lowest_nodes if edge['end'] == end_node.id for edge in node.out_edges] # Children in end_nodes
-            if new_group:
-                new_group.insert(0, node)
-                groups.append(new_group)
-
-    
-    # Delete too-large clusters
-    groups = [g for g in groups if len(g) <= MAXTOUR]  
-    
-    # Recursively combine groups
-    recurse = False
-    
+def divide(cluster):     
+    """ Divide cluster into subclusters. """
+    # Create family tree for each node
+    all_trees = []
     for node in cluster:
-        parent = next((n for n in cluster if any(n.id == edge['start'] for edge in node.in_edges)), None)
-        if not parent: # This is the root node
+        if node in [tree for tree in all_trees]: # Already part of a tree
             continue
-        node_group = next((group for group in groups if node in group), None)
-        parent_group = next((group for group in groups if parent in group), None)
+        new_tree = [node]
+        while True: # Add all children to tree
+            for n in new_tree:
+                children = [o for o in cluster if any(edge <= MAXPATH and edge in o.in_edges 
+                                                   for edge in n.out_edges )]
+            if not children:
+                break
+            else: 
+                new_tree.extend(children)
+        # Add to trees if small enough        
+        if len(new_tree) <= MAXTOUR:
+            all_trees.append(new_tree)
 
-        if node_group == parent_group:
-            continue
-        if node_group and not parent_group: 
-            node_group.insert(0, parent)
-        if parent_group and not node_group:
-            parent_group.append(node)
-        if node_group and parent_group:
-            
+    # Gather largest trees 
+    final_trees = []
+    all_trees.sort(reverse=True)
+    for tree in all_trees:
+        if not any(tree[0] in t for t in final_trees):
+            final_trees.append(tree)
 
-                    
-    
-            
-        siblings = [p] +[g for g in groups if g[0].id in p.edges]
-        
-        for s in siblings:
-            combo = [n for n in s]
-            if len(combo) > MAXTOUR:
-                continue
-            groups.append(combo)
-            # Remove now-combined groups
-            groups = [g for g in groups if not any(g[0].id == c.id for c in combo)] 
-            recurse = True
-            
-    if recurse:
-        return divide(cluster, groups)
-    
-    # Group remaining nodes
-    if ungrouped:
-        groups.append(ungrouped)
-            
-    return groups
-    
+    # Add unused nodes
+    unused = [node for node in cluster if not any(node in tree for tree in final_trees)]
+    if unused:
+        final_trees.insert(0, unused)
+
+    if any(len(cluster) > MAXTOUR for cluster in final_trees):
+        print('Error: could not divide cluster')
+        return 2
+
+    return final_trees
 
 def spanning_tree(cluster):
     """ Chu-Liu/Edmond's algorithm """
