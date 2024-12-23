@@ -2,7 +2,7 @@
 Return an itinerary consisting of a list of short tours.
 
 Arg:
-nodes -- a list of IDs for the attrictions to be visited on the tour
+nodes -- a list of IDs for the sites to be visited on the tour
 """
     
 # Settings
@@ -90,16 +90,21 @@ def main(nodes):
 
 
 def cluster(root, clusters, nodes): 
-    """ Return a list of all nodes reachable from a given root using edges smaller than MAXPATH.
+    """ Recursively gather neighboring nodes.
+
+    Gather all nodes reachable from a given root node using paths smaller
+    than MAXPATH. Return a list of node objects
 
     Positional arguments:
     root -- id of the root node.
-    clusters -- list of clusters already created. Each cluster is a list of node objects
-    nodes -- list of all node objects in the graph.
+    clusters -- list of clusters already created.
+    nodes -- list of all nodes  in the graph.
     """
     
-    # Get starting node
-    node = next(n for n in nodes if n.id == root)
+    # Get root node and validate it
+    node = next((n for n in nodes if n.id == root), None)
+    if node == None:
+       raise ValueError('Invalid root node')
     
     # Return empty set if node is already in a cluster
     if any(node in c for c in clusters): 
@@ -112,7 +117,9 @@ def cluster(root, clusters, nodes):
     neighbors = [edge['end'] for edge in node.out_edges]
     for neighbor in neighbors: 
         next_node = next((n for n in nodes if n.id == neighbor), None)
-        if not any(next_node in c for c in clusters):
+        if next_node == None:
+            continue
+        if not any(next_node in c for c in clusters) and not next_node in new_cluster:
             new_cluster.update(cluster(next_node, clusters, nodes))
     
     return list(new_cluster)        
@@ -123,7 +130,7 @@ def divide(cluster):
     # Create family tree for each node
     all_trees = []
     for node in cluster:
-        if node in [tree for tree in all_trees]: # Already part of a tree
+        if any(node in tree for tree in all_trees): # Already part of a tree
             continue
         new_tree = [node]
         while True: # Add all children to tree
@@ -166,7 +173,7 @@ def spanning_tree(cluster):
     # Add smallest incoming edge for each node to tree, skipping the root.
     for node in cluster:
         incoming_edge = sorted([e for e in edges if e['end'] == node.id], 
-                               key=lambda x:x['weight'][0])
+                               key=lambda x:x['weight'])[0]
         tree.append(incoming_edge[0])
         visited.extend(incoming_edge['start'], incoming_edge['end'])
         
@@ -202,7 +209,16 @@ def spanning_tree(cluster):
 
 
 def get_cycle(tree, current_edge, stack=None):
-    """Uses DFS to find a cycle, returns cycle as list of edges"""
+    """Return list of edges forming a cycle if any exist.
+    
+    Use DFS to recursively add the next edge and check to see if a cycle 
+    has been completed.
+
+    Parameters:
+    tree --- list of all edges to check
+    current_edge --- edge being checked
+    stack --- current stack
+    """
     
     # Initialize stack
     if not stack:
@@ -210,7 +226,7 @@ def get_cycle(tree, current_edge, stack=None):
         
     for edge in tree:
         if edge['start'] == current_edge['end']: 
-            # Check for cycle
+            # Check for completed cycle
             for i, n in enumerate(stack):
                 if edge['end'] == n['start'] :
                     # Return cycle
@@ -226,7 +242,19 @@ def get_cycle(tree, current_edge, stack=None):
     return None
 
 def condense(cycle, tree, visited, edges):
-    """ Condenses cycle into supernode. Returns updated tree and visited list. """
+    """ Condense cycle in spanning tree. 
+    
+    Called by the spanning_tree function when cycles are detected.
+    Return updated tree and visited  lists, with the edges forming the 
+    cycle replaced by a supernode object and all incoming and outgoing 
+    edges removed except the smallest ones
+
+    Parameters:
+    cycle --- list of edges forming a cycle
+    tree --- list of edges in the tree
+    visited --- list of node objects already visited in spanning_tree
+    edges --- list of all edges in graph
+    """
     
     # Gather cycle edges and nodes
     internal, outgoing, incoming, cycle_nodes = [], [], [], []
@@ -263,7 +291,18 @@ def condense(cycle, tree, visited, edges):
     
     
 def get_tour(tree, cluster, edges):
-    """ Construct tour based on MST, minimizing dead ends """
+    """ Construct tour based on MST.
+     
+    Create a tour while attempting to minimize retracing steps by
+    replacing forks with alternate paths starting at dead ends. Return
+    Return tour as list of edges.
+    
+    Parameters:
+    tree --- list of edges forming MST of cluster
+    cluster --- list of node objects to be visited
+    edges --- list of all edges in graph
+    """
+
     nodes = [n.id for n in cluster]
     available_edges = [e for e in edges if e['start'] in nodes 
                        and e['end'] in nodes 
@@ -301,7 +340,7 @@ def get_tour(tree, cluster, edges):
             break              
         
         for branch in new_branches:
-            fork = branches.next(lambda x:branch[0] in branches[x])
+            fork = next(b for b in branches if any(b[0]['start'] == n['start'] for n in branch))
             i = branches.index(fork)
             branches.insert(i, branch)
 
