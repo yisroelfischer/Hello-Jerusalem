@@ -66,23 +66,23 @@ def main(nodes):
     clusters = []
     for node in nodes_by_neighbors:
         id = node[0] 
-        if not any(id == n.id for cluster in clusters for n in cluster):
+        if not any(id == n.id for node_cluster in clusters for n in node_cluster):
             clusters.append(cluster(id, clusters, nodes)) # cluster() returns a list of node objects
     
     # Divide clusters into tours less than maxtour
     new_clusters = []
-    for cluster in clusters:
-        if len(cluster) > MAXTOUR:
-            new_clusters.extend(divide(cluster))
+    for node_cluster in clusters:
+        if len(node_cluster) > MAXTOUR:
+            new_clusters.extend(divide(node_cluster))
         else:
-            new_clusters.remove(cluster)
+            new_clusters.remove(node_cluster)
     clusters = new_clusters
     
     # Generate tour of each neighborhood 
     tours = []
-    for cluster in clusters:
-        tree = spanning_tree(cluster) # Chu-Liu/Edmonds' algorithm
-        cluster_tour = get_tour(tree, cluster, edges) # Generate tour starting with root node
+    for node_cluster in clusters:
+        tree = spanning_tree(node_cluster) # Chu-Liu/Edmonds' algorithm
+        cluster_tour = get_tour(tree, node_cluster, edges) # Generate tour starting with root node
         tours.append(cluster_tour)
     itinerary = [[e['id'] for e in tour]for tour in tours]
     
@@ -347,8 +347,4 @@ def get_tour(tree, cluster, edges):
     itinerary = [n for branch in branches for n in branch]
     return itinerary
 
-            
-test_ = [1, 2, 3, 4]
-       
-if __name__ == '__main__':
-    main(test_)
+
