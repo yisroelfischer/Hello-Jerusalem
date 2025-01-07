@@ -7,7 +7,7 @@ nodes -- a list of IDs for the sites to be visited on the tour
     
 # Settings
 MAXTOUR = 10 # Max number of nodes per cluster
-MAXPATH = 10 # Max weight of edge within cluster
+MAXPATH = 37 # Max weight of edge within cluster
 
 
 class Node: 
@@ -31,20 +31,8 @@ class Supernode:
         self.entrance = incoming['end']
         self.exit = outgoing['start']
 
-
-class Data:
-    # Sample edges
-    sample_edges = [{'id': (1, 2), 'start': 1, 'end': 2,'weight': 1},
-                    {'id': (1, 3), 'start': 1, 'end': 3,'weight': 2},
-                    {'id': (2, 1), 'start': 2, 'end': 1,'weight': 3}, 
-                    {'id': (2, 3), 'start': 2, 'end': 3,'weight': 4},
-                    {'id': (3, 1), 'start': 3, 'end': 1,'weight': 1},
-                    {'id': (3, 2), 'start': 3, 'end': 2,'weight': 3}
-                   ]
-
    
-def main(nodes):
-    edges = Data.sample_edges
+def main(nodes, edges):
     nodes = [Node(site, edges) for site in nodes] 
 
     # Validate edge format
@@ -67,7 +55,9 @@ def main(nodes):
     for node in nodes_by_neighbors:
         id = node[0] 
         if not any(id == n.id for node_cluster in clusters for n in node_cluster):
-            clusters.append(cluster(id, clusters, nodes)) # cluster() returns a list of node objects
+            new_cluster = cluster(id, clusters, nodes)
+            if new_cluster:
+                clusters.append(new_cluster) 
     
     # Divide clusters into tours less than maxtour
     new_clusters = []
@@ -90,7 +80,7 @@ def main(nodes):
 
 
 def cluster(root, clusters, nodes): 
-    """ Recursively gather neighboring nodes.
+    """ Gather neighboring nodes.
 
     Gather all nodes reachable from a given root node using paths smaller
     than MAXPATH. Return a list of node objects
@@ -103,27 +93,24 @@ def cluster(root, clusters, nodes):
     
     # Get root node and validate it
     node = next((n for n in nodes if n.id == root), None)
-    if node == None:
-       raise ValueError('Invalid root node')
-    
-    # Return empty set if node is already in a cluster
-    if any(node in c for c in clusters): 
-        return set()
-    
-    # Initialize new cluster
-    new_cluster = {node}  
-    
-    # Recursively add neighboring nodes
-    neighbors = [edge['end'] for edge in node.out_edges]
-    for neighbor in neighbors: 
-        next_node = next((n for n in nodes if n.id == neighbor), None)
-        if next_node == None:
-            continue
-        if not any(next_node in c for c in clusters) and not next_node in new_cluster:
-            new_cluster.update(cluster(next_node, clusters, nodes))
-    
-    return list(new_cluster)        
+    clustered = {n for cluster in clusters for n in cluster}
 
+    if node is None:
+       raise ValueError('Invalid root node')
+    if node in clustered:
+        return []
+    
+    cluster = [node]
+    children = [edge['end'] for edge in node.out_edges 
+                if edge['weight'] <= MAXPATH and not edge['end'] in clustered]
+    while children:
+        child = next(n for n in nodes if n.id == children[0]and n not in cluster)
+        children.pop(0)
+        cluster.append(child)
+        children.extend([edge['end'] for edge in child.out_edges if edge['weight'] <= MAXPATH])
+        print([c.id for c in cluster])
+
+    return cluster
 
 def divide(cluster):     
     """ Divide cluster into subclusters. """
