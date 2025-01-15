@@ -28,7 +28,7 @@ def test_cluster():
     
 
 def test_divide():
-    for cluster in divide(cluster_from_1, nodes_by_id):
-        print(cluster.values())
-   # assert divide(cluster_from_1) == []
+    assert divide(cluster_from_1, nodes_by_id) == [
+        {1: {nodes_by_id.get(node) for node in [1, 7, 8, 9, 10]}},
+        cluster_from_2]
 
