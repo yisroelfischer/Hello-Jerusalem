@@ -121,23 +121,25 @@ def divide(cluster, nodes_by_id):
     
     new_clusters = []
     
-    # Find first fork
+    # Get first node
     root_id = next((n for n in cluster.keys()), None)
     root = nodes_by_id[root_id]
     current_node = root
     if current_node is None:
         raise ValueError('Root not in cluster')
     
-    visited = []
+    # Traverse cluster 
+    visited = {current_node}
     while True:
+        print(current_node.id)
         children = [edge['end'] for edge in current_node.out_edges 
                     if edge['weight'] <= MAXPATH and not edge['end'] in cluster]
         
-        if len(children) == 1:
-            visited.append(current_node)
+        if len(children) == 1: # Not a fork
+            visited.add(current_node)
             current_node = nodes_by_id[children[0]]
 
-        elif len(children) == 0:
+        elif len(children) == 0: # End of cluster
             # Divide cluster into equal parts if no fork exists
             divisor = math.ceil(len(cluster.values()) / MAXTOUR) # Number of parts
             length = len(cluster.values() // divisor) # Length of each part
@@ -148,7 +150,7 @@ def divide(cluster, nodes_by_id):
 
             return new_clusters
         
-        else:
+        else: # Fork found
             break
     
     # Split cluster at fork
@@ -180,17 +182,16 @@ def divide(cluster, nodes_by_id):
     # Add back in visited nodes to smallest cluster
     subclusters.sort(key=lambda x:len(x['cluster']))
     subclusters[0]['root'] = root
+    subclusters[0]['cluster'].update(visited)
 
     for subcluster in subclusters:
-        print(subcluster.keys())
-        subcluster = {subcluster['root']: subcluster['cluster']} # Refactor
+        subcluster = {subcluster['root'].id: subcluster['cluster']} # Refactor
 
         # Rinse and repeat
         if len(subcluster.values()) <= MAXTOUR:
             new_clusters.append(subcluster)
         else:
             new_clusters.extend(divide(subcluster)) 
-    
 
         
     return new_clusters
