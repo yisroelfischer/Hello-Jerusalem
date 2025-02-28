@@ -3,6 +3,7 @@ Return an itinerary consisting of a list of short tours.
 
 Arg:
 nodes -- a list of IDs for the sites to be visited on the tour
+edges -- a list of dicts representing all paths in the database
 """
 
 import math
@@ -69,12 +70,12 @@ def main(nodes, edges):
             
             if new_cluster:
                 clusters.append(new_cluster)
-                clustered.update([n for n in new_cluster.keys()])
-                clustered.update([n['end'] for c in new_cluster.values() for n in c])
+                clustered.add(new_cluster['root'])
+                clustered.update([e['end'] for e in new_cluster['cluster']])
     # Divide clusters into tours less than Settings.MAXTOUR
     new_clusters = []
     for old_cluster in clusters:
-        if len(next( s for s in old_cluster.values())) > Settings.MAXTOUR:
+        if len(old_cluster['cluster']) > Settings.MAXTOUR:
             new_clusters.extend(divide(old_cluster, nodes_by_id))
         else:
             new_clusters.append(old_cluster)
@@ -83,11 +84,19 @@ def main(nodes, edges):
     # Generate tour of each neighborhood 
     tours = []
     for c in clusters:
-        node_cluster = [nodes_by_id[n] for n in c.keys()
-                        + [nodes_by_id[n['end']] for s in [n for n in c.values()] for n in s]]
-        tree = spanning_tree(node_cluster) # Chu-Liu/Edmonds' algorithm
-        cluster_tour = get_cluster_tour(tree, node_cluster, edges) # Generate tour starting with root node
-        tours.append(cluster_tour)
+        root_node = nodes_by_id[c['root']]
+        nodes = [nodes_by_id[e['end']] for e in c['cluster']]
+        if not root_node:
+            raise ValueError('empty cluster')
+        if not nodes: # Isolated node
+            tours.append(c['root'])
+        if len(nodes) == 1: # Isolated edge
+            tours.append(c['cluster'][0])
+        else:           
+            node_cluster = {'root': root_node, 'nodes': nodes}                  
+            tree = spanning_tree(node_cluster) # Chu-Liu/Edmonds' algorithm
+            cluster_tour = get_cluster_tour(tree, node_cluster, edges) # Generate tour starting with root node
+            tours.append(cluster_tour)
     itinerary = []
     for tour in tours:
         if isinstance(tour, int): # Isolated node
@@ -102,7 +111,7 @@ def cluster(root, clusters, nodes):
     """ Gather neighboring nodes.
 
     Gather all nodes reachable from a given root node using paths smaller
-    than MAXPATH.. Return a dict with the root as the key and a set of edges as the value
+    than MAXPATH. Return a dict with the root and edges as ids
 
     Positional arguments:
     root -- id of the root node.
@@ -125,7 +134,7 @@ def cluster(root, clusters, nodes):
     while children:
         child = next((n for n in nodes if n == children[0] and n not in cluster), None)
         if child is None:
-            return {root: cluster}
+            return {'root': root, 'cluster': cluster}
         children.remove(child)
         cluster.add(children[0])
         visited.add(child)
@@ -133,23 +142,21 @@ def cluster(root, clusters, nodes):
                          if edge['weight'] <= Settings.MAXPATH and not edge['end'] in children])
 
      
-    return {root: cluster}
+    return {'root': root, 'cluster': cluster}
 
 def divide(cluster):     
     """ Divide cluster into subclusters smaller than MAXTOUR. """
     
     new_clusters = []
     
-    # Get first node
-    root = next((n for n in cluster.keys()), None)
+    # Get root node
+    root = cluster['root']
     current_node = root
-    if current_node is None:
-        raise ValueError('Root not in cluster')
     
     # Traverse cluster 
     visited = {current_node}
     while True:
-        children = [edge['end'] for edge in cluster
+        children = [edge['end'] for edge in cluster['cluster']
                     if edge['start'] == current_node
                     and edge['weight'] <= Settings.MAXPATH]
 
@@ -159,12 +166,14 @@ def divide(cluster):
 
         elif len(children) == 0: # End of cluster
             # Divide cluster into equal parts if no fork exists
-            divisor = math.ceil(len(cluster.values()) / Settings.MAXTOUR) # Number of parts
-            length = len(cluster.values() // divisor) # Length of each part
+            divisor = math.ceil(len(cluster['cluster']) / Settings.MAXTOUR) # Number of parts
+            length = len(cluster['cluster'] // divisor) # Length of each part
 
             for i in range(divisor):
-                new_clusters.append({cluster['root'][i]: cluster['root'][i:i + length]})
-                i += (length + 1)
+                j = i * length
+                new_clusters.append({'root': cluster['cluster'][j],
+                                     'cluster': cluster['cluster'][j:j + length]})
+                i += 1
 
             return new_clusters
         
@@ -204,14 +213,15 @@ def divide(cluster):
     subclusters[0]['cluster'].update(visited)
 
     for subcluster in subclusters:
-        subcluster = {subcluster['root'].id: subcluster['cluster']} # Refactor
+        subcluster = {'root': subcluster['root'].id, 'cluster': subcluster['cluster']} # Refactor
 
         # Rinse and repeat
         if len([n for s in subcluster.values() for n in s]) <= Settings.MAXTOUR:
             new_clusters.append(subcluster)
         else:
-            #print(f'{[n for n in subcluster.keys()]}:{[n.id for s in subcluster.values() for n in s]}')
-            new_clusters.extend(divide(subcluster)) 
+            divided = divide(subcluster)
+            for c in divided:
+                new_clusters.extend(c) 
 
         
     return new_clusters
@@ -219,8 +229,10 @@ def divide(cluster):
 
 def spanning_tree(cluster):
     """ Chu-Liu/Edmond's algorithm """
-    root = next(n for n in cluster.keys())
-    cluster = [n for s in cluster.values() for n in s] # Convert cluster to list
+    root = cluster['root']
+    cluster = [n for n in cluster['nodes']] # Convert cluster to list
+    if not cluster:
+        return root
     tree = []
     visited = [cluster[0].id]
     edges = [e for n in cluster for e in n.out_edges 
@@ -351,12 +363,12 @@ def get_cluster_tour(tree, cluster, edges):
     cluster --- list of node objects to be visited
     edges --- list of all edges in graph
     """
-    root = next(n for n in cluster.keys())
-    cluster = {n for s in cluster.values() for n in s} # Convert cluster to set
+    root = cluster['root']
+    cluster = {n for n in cluster['nodes']} # Convert cluster to set
     #print(f'tree:{[e['id'] for e in tree]}\ncluster: {[n.id for n in cluster]}')
     nodes = {n.id for n in cluster}
-    if len(nodes) == 1: # Isolated node
-        return next(n for n in nodes)
+    if isinstance(tree, Node): # Isolated node
+        return tree
     available_edges = [e for e in edges if e['start'] in nodes 
                        and e['end'] in nodes 
                        and e['weight'] <= Settings.MAXPATH]

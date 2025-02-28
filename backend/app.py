@@ -1,11 +1,13 @@
-from flask import Flask, jsonify
+from flask import Flask, request,  jsonify
+from flask_cors import CORS
 import sqlite3
-import get_tour
+from get_tour import main
 
 app = Flask(__name__)
+CORS(app)
 
 def connect():
-    db = sqlite3.connect('./db')
+    db = sqlite3.connect('./db.sqlite3')
     db.row_factory = sqlite3.Row
     return db
 
@@ -26,6 +28,19 @@ def get_sites_list(tags):
     return jsonify(sites)
     
 
-@app.route('/getTour<sites>', methods=['POST'])
-def get_tour(sites):
-    return get_tour.main(sites)
+@app.route('/getTour', methods=['POST'])
+def get_tour():
+    data = request.json
+    sites = data.get('sites')
+    
+    db = connect()
+    cur = db.cursor()
+    cur.execute('SELECT id, start, end, length FROM paths')
+    edges = [{'id': id, 'start': start, 'end': end, 'weight': length} for id, start, end, length in cur.fetchall()]
+    db.close()
+    
+    return jsonify(main(sites, edges))
+
+
+if __name__ == '__main__':
+    app.run(port=3001)
