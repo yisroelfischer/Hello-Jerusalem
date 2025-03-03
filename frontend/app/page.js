@@ -17,18 +17,13 @@ export default function App (){
 
     const getTour = async (sites) => {
         try{
-            const tour = await fetch('http://127.0.0.1:3001/getTour', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({sites})
-            });
-            if (!tour.ok){
+            const url = `http://127.0.0.1:3001/get-tour?sites=${sites}`
+            const response = await fetch(url);
+            if (!response.ok){
                 throw new Error(`HTTP error. Status: ${tour.status}`)
             }
-
-            return tour.json()
+            const tour = await response.json()
+            setTour(tour)
         } catch (error) {
             console.error('getTour failed');
             return null
@@ -38,13 +33,8 @@ export default function App (){
 
     const handleClick = async (v) => {
         if (state === 1){
-            tourList = await getTour(v)
-            if (tourList) {
-                setTour(tourList)
-            }
-            else {
-                console.error('null tour list')
-            }
+            console.log(`setting tour: ${v}`);
+            getTour(v);
         }
     }
 
