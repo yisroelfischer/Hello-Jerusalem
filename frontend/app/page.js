@@ -20,7 +20,7 @@ export default function App (){
             const url = `http://127.0.0.1:3001/get-tour?sites=${sites}`
             const response = await fetch(url);
             if (!response.ok){
-                throw new Error(`HTTP error. Status: ${tour.status}`)
+                throw new Error(`HTTP error. Status: ${response.status}`)
             }
             const tour = await response.json()
             setTour(tour)
@@ -45,10 +45,10 @@ export default function App (){
     },[tour]);
     
     return(
-        <>
+        <div className="main">
         {(state === 0) && <Home parentCallback={ (v) => enter(v) }/>}
         {(state === 1) && <New parentCallback={ (v) => handleClick(v) }/>}
         {(state === 2) && <Tour tour={tour} parentCallback={ (v) => handleClick(v) }/>}
-        </>
+        </div>
     );
 }

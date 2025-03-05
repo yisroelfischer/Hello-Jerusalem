@@ -64,13 +64,12 @@ function New({parentCallback}) {
 
 
     return(
-        <>  
+        <div className='container'> 
         <form className="square">
-            <a href="./"><img src="/logo.png" className="logo"></img></a>
             <p>Where would you like to go?</p>
-            <div className='tabs'>
+            <div className='menu'>
                 {sites.map((tag) =>
-                    <button  type='button' id={tag.tag} value={tag.tag} onClick= { handleClick }>{ tag.tag }</button>
+                    <button  type='button' className='button' id={tag.tag} value={tag.tag} onClick= { handleClick }>{ tag.tag }</button>
                     )}
             </div>
             {(list.list) && <div id='list'>
@@ -89,7 +88,7 @@ function New({parentCallback}) {
             </div>}
             <button className='button' onClick={handleSubmit}>Begin tour</button>
         </form>
-        </>
+        </div>
     )
 }
 
