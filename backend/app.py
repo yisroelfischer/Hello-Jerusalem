@@ -1,7 +1,10 @@
+import os, sqlite3
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-import sqlite3
 from get_tour import main
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
@@ -11,19 +14,15 @@ def connect():
     db.row_factory = sqlite3.Row
     return db
 
-@app.route('/get-site-lists', defaults={'tags': 'all'}, methods=['GET'])
-@app.route('/get-site-lists/<tags>', methods=['GET'])
-def get_site_lists(tags):
+@app.route('/get-site-lists', methods=['GET'])
+def get_site_lists():
     print('getting site lists')
     db = connect()
     cur = db.cursor() 
-    
-    if tags == 'all':
-        cur.execute('SELECT tag FROM tags')
-        tags = cur.fetchall()
-        tags = [tag[0] for tag in tags] 
-    else:
-        tags = tags.split(',')
+
+    cur.execute('SELECT tag FROM tags')
+    tags = cur.fetchall()
+    tags = [tag[0] for tag in tags]
         
     site_lists = []
     for tag in tags:
@@ -56,6 +55,13 @@ def get_tour():
     print(result)
     return jsonify(result)
 
+@app.route('/gemini-api-key', methods=['GET'])
+def fetchKey():
+    key = os.getenv('GEMINI_API_KEY')
+    if not key:
+        return(jsonify({'error': 404}))
+    return jsonify({'key': key})
+
 
 if __name__ == '__main__':
-    app.run(port=3001, debug=True)
+    app.run(port=5000, debug=True)

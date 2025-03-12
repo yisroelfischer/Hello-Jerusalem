@@ -13,11 +13,26 @@
 
 html,
 body {
+  height: 100vh;
+  width: 100vw;
+  margin: 0%;
   overflow: auto;
+
   background-image: url('/background.jpg');
   background-size: cover;
+  background-repeat: no-repeat;
+
+  font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+*{
+  font-family: inherit;
 }
 
 
@@ -26,6 +41,7 @@ header{
   position: sticky;
   width: 100%;
   height: fit-content;
+  max-height: 20vh;
   display: flex;
   flex-direction: row;
   place-content: center;
@@ -33,100 +49,166 @@ header{
 
 .logo{
   border-radius: 50%;
-  width: 250px;
+  width: 200px;
   margin: 10px
 }
 
 
 /* Main page */
 main {
-  height: 100%;
-  width: 100%;
+  max-height: 80vh;
   color: var(--foreground);
   display: flex; 
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
+  justify-self: flex-end;
+  flex: 1;
 }
 
-/* Chat */
-.chat{
+.hat{
+  width: 50px;
+  padding: 25px;
+  align-self: baseline;
+}
+
+
+/*New*/
+form{
   display: flex;
   flex-direction: column;
-  justify-content: space-around;
   align-items: center;
-  width: 100%;
-}
-
-.bubble{
-  background-color: var(--background);
-  border: 5px solid var(--accent);            
-  height: fit-content;
-  width: 75%;
-  padding: 7px;
-  margin: 7px;
-}
-
-.right{
-  align-self: end;
-  border-radius: 20px 0% 20px 20px;
-}
-
-.left{
-  border-radius: 0% 20px 20px 20px;
-  align-self: start;
-}
-
-.inner-hat{
-  height: 50px;
-  float:left;
-  margin: 5px;
-}
-
-.chat-text{  
-  text-align: justify;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: small;
+  width: fit-content;
+  max-width: 90vw;
+  max-height: 60vh;
   overflow: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--foreground) transparent;
-}
-
-
-/*Menu*/
-.menu {
-  display: flex;
-  width: fit-content;
-  place-content: space-around;
-  place-items: center;
-  margin:5%;
-}
-
-.button{
-  width: fit-content;
-  height: fit-content;
-  font-size: small;
-  font-family: Arial, Helvetica, sans-serif;
-  color: white;
-  background-color: var(--accent);
-  border-width: 0px;
+  border: 5px solid var(--foreground);
   border-radius: 10px;
-  margin: 5px;
+  background-color: var(--background);
+  box-shadow: 0px 0px 6px 1px var(--foreground);
+}
+
+.form-head {
+  position: sticky;
+  box-sizing: border-box;
+  border-radius: 5px 5px 0px 0px;
+  background-color: var(--accent);
+  width: 100%;
+  padding: 2px;
+}
+
+
+form p {
+  padding: 20px 15px 15px ;
+  margin: 0px;
+  height: fit-content;
+  font-size: medium;
+  text-align: center;
+}
+
+.tabs {
+  justify-self: end;
+  width: 100%;
+  display: flex;
+  width: 100%;
+  height: auto;
+  align-items: flex-end;
+  justify-content: space-around;
+}
+
+
+.tab{
+  font-size: medium;
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--foreground);
+  background-color: inherit;
+  flex-basis: 100%;
   cursor: pointer;
   text-align: center;
-  padding: 10px 5px 10px 5px;
+  border-radius: 3px;
+  margin: 0px 15px;
+  padding: 5px 0px;
+  border: none;
 }
 
-.button:hover{
-  border: 3px solid var(--background)
+.form-main{
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--foreground) transparent ;
 }
 
 .list{
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
-  max-height: 30vh;
-  margin: 10px;
+  max-width: 100%;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 10px;
+  width: 100%;
+  max-height: 80vh;
+}
+
+.check-border{
+  margin: 5px;
+  
+}
+
+.check-border :hover{
+  cursor: pointer;
+  box-shadow: 0px 0px 3px 3px var(--accent)
+}
+
+.check-container{
+  border-radius: 5px;
+  width: fit-content;
+  max-width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+.check-label{
+  padding: 5px;
+
+}
+
+.check-container :hover{
+  box-shadow: none;
+}
+
+.check{
+  margin: 5px;
+  accent-color: var(--accent);
+}
+
+.form-foot{
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: 0px 0px 5px 5px;
+  background-color: var(--accent);
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+.button{
+
+  font-size: large;
+  padding: 5px;
+  margin: 15px;
+  background-color: var(--foreground);
+  border: none;
+  color: white;
+  border-radius: 5px;
+  box-shadow: 0px 0px 5px 1px var(--background);
+}
+
+.button:hover{
+  background-color: #8C6C65;
 }
 
 iframe{
