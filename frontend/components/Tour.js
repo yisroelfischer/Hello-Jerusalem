@@ -1,21 +1,29 @@
 import React, { useEffect, useState } from "react";
 import Player from "./Player";
 
-export default function Tour({ parentCallback, tour }) {
-  console.log(tour);
+export default function Tour({
+  setState,
+  tour,
+  tourIndex,
+  setTourIndex,
+  toursLength,
+}) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [current, setCurrent] = useState(null);
+  const [src, setSrc] = useState(null);
+  const [currentType, setCurrentType] = useState("image");
 
   const getInfo = async () => {
-    const next = tour[currentIndex];
-    console.log(`next: ${next}`);
+    console.log("tour:", tour, "currentIndex", currentIndex);
+    const { type, id } = tour[currentIndex];
     let url = "";
-    switch (next.type) {
+    switch (type) {
       case "site":
-        url = `http://127.0.0.1:5000/get-site?site=${next.id}`;
+        url = `http://127.0.0.1:5000/get-site?site=${id}`;
+        console.log(url);
         break;
       case "path":
-        url = `http://127.0.0.1:5000/get-path?path=${next.start}${next.end}`;
+        const { start, end } = tour[currentIndex];
+        url = `http://127.0.0.1:5000/get-path?path=${start},${end}`;
     }
     try {
       const response = await fetch(url);
@@ -26,6 +34,7 @@ export default function Tour({ parentCallback, tour }) {
       if (info.error) {
         throw new Error(info.error);
       }
+      console.log("info:", info);
       return info;
     } catch (error) {
       console.error("getInfo failed");
@@ -34,29 +43,47 @@ export default function Tour({ parentCallback, tour }) {
   };
 
   const handleClick = () => {
-    setCurrentIndex((prev) => prev + 1);
+    console.log("tour.length:", tour.length, "currentIndex:", currentIndex);
+    if (currentIndex === tour.length - 1) {
+      if (tourIndex === toursLength - 1) {
+        setCurrentIndex(0);
+        setTourIndex(0);
+        setState(0);
+      } else {
+        setCurrentIndex(0);
+        setTourIndex((prev) => prev + 1);
+      }
+    } else {
+      setCurrentIndex((prev) => prev + 1);
+    }
   };
 
   useEffect(() => {
-    if (currentIndex > tour.length()){
-        parentCallback(endTour)
-    }
     const a = async () => {
       console.log("useEffect");
       const info = await getInfo();
       if (!info) {
         throw new Error(`No response recieved`);
       }
-      setCurrent(info);
+      console.log("setting info: ", info);
+      if (info.image) {
+        setCurrentType("site");
+        setSrc(`sites/${info.name}.jpg`);
+      } else if (info.path) {
+        setCurrentType("path");
+        setSrc(info.path.url);
+      }
     };
     a();
-  }, [currentIndex]);
+  }, [currentIndex, tour]);
 
   return (
     <>
-      {current && current.type === "site" && <img src={current.image}></img>}
-      {current && current.type === "path" && <Player url={current.url} />}
-      <button onClick={handleClick}>Next</button>
+      {currentType === "site" && <img src={src} alt="Site preview" />}
+      {currentType === "path" && <Player url={src} />}
+      <button className="button" onClick={handleClick}>
+        Next
+      </button>
     </>
   );
 }

@@ -1,8 +1,9 @@
 export default function Player({url}){
+    const src = url.startsWith('http') ? url : `https://${url}`;
     return(
         <div className='player'>
             <iframe 
-                src={url}
+                src={src}
                 allow='autoplay'
                 allowFullScreen
             ></iframe>
