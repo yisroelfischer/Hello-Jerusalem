@@ -3,7 +3,7 @@ Return an itinerary consisting of a list of short tours.
 
 Arg:
 nodes -- a list of IDs for the sites to be visited on the tour
-edges -- a list of dicts representing all paths in the database
+edges -- a list of dicts representing all paths in the database. Keys: id, start, end, length (ms)
 """
 
 import math
@@ -11,7 +11,7 @@ import math
 
 class Settings:
     MAXTOUR = 10 # Max number of nodes per cluster
-    MAXPATH = 37 # Max weight of edge within cluster
+    MAXPATH = 600 # Max weight of edge within cluster
     SAMPLE = None # Track test number - delete this
 
 
@@ -23,8 +23,8 @@ class Node:
         self.out_edges = [edge for edge in edges if edge['start'] == self.id] # outgoing edges
         
         
-        def __eq__(self, other):
-            return isinstance(other, Node) and self.id == other.id
+    def __eq__(self, other):
+        return isinstance(other, Node) and self.id == other.id
 
 
 class Supernode:
@@ -38,12 +38,11 @@ class Supernode:
 
    
 def main(nodes, edges):
-    # Track tests - delete this
-    if len(nodes) == 20:
-        Settings.SAMPLE = 5
-
+    print(f'Begin processing. Sites: {nodes}. Edges: {[[e['start'], e['end']] for e in edges]}')
     nodes = [Node(id, edges) for id in nodes]
     nodes_by_id = {node.id: node for node in nodes}
+    for node in nodes:
+        print(f'node: {node.id} edges: {node.out_edges}')
 
     # Validate edge format
     keys = ['id', 'start', 'end', 'weight']
@@ -71,7 +70,32 @@ def main(nodes, edges):
             if new_cluster:
                 clusters.append(new_cluster)
                 clustered.add(new_cluster['root'])
-                clustered.update([e['end'] for e in new_cluster['cluster']])
+                clustered.update([e for e in new_cluster['cluster']])
+                
+    # Combine small clusters
+    combined = False
+    while not combined:
+        cluster_list = clusters
+        print(f'cluster_list: {cluster_list}')
+        combined_clusters = []
+        combined = True
+        for cl in cluster_list:
+            neighbors = [e['end'] for e in nodes_by_id[cl['root']].out_edges]
+            if len(cl['cluster']) < Settings.MAXTOUR:
+                neighbor = next(iter([c for c in clusters if (c != cl 
+                                                         and c['root'] in neighbors
+                                                         and (len(c['cluster']) 
+                                                              + len(cl['cluster']) 
+                                                              <= Settings.MAXTOUR))]),None)
+                print(f'neighbor: {neighbor}')
+                if neighbor:
+                    combined = False
+                    merged = cl['cluster'] | (neighbor['cluster'])
+                    combined_clusters.append({'root': cl['root'], 'cluster': merged})
+                    clusters.remove(neighbor)
+                else: combined_clusters.append(cl)
+        clusters = combined_clusters   
+                    
     # Divide clusters into tours less than Settings.MAXTOUR
     new_clusters = []
     for old_cluster in clusters:
@@ -80,12 +104,13 @@ def main(nodes, edges):
         else:
             new_clusters.append(old_cluster)
     clusters = new_clusters
+    print(f'clusters: {clusters}')
     
     # Generate tour of each neighborhood 
     tours = []
     for c in clusters:
         root_node = nodes_by_id[c['root']]
-        nodes = [nodes_by_id[e['end']] for e in c['cluster']]
+        nodes = [nodes_by_id[e] for e in c['cluster']]
         if not root_node:
             raise ValueError('empty cluster')
         if not nodes: # Isolated node
@@ -93,25 +118,27 @@ def main(nodes, edges):
         if len(nodes) == 1: # Isolated edge
             tours.append(c['cluster'][0])
         else:           
-            node_cluster = {'root': root_node, 'nodes': nodes}                  
+            node_cluster = {'root': root_node.id, 'nodes': nodes}                  
             tree = spanning_tree(node_cluster) # Chu-Liu/Edmonds' algorithm
             cluster_tour = get_cluster_tour(tree, node_cluster, edges) # Generate tour starting with root node
             tours.append(cluster_tour)
     itinerary = []
     for tour in tours:
         if isinstance(tour, int): # Isolated node
-            itinerary.append(tour)
+            itinerary.append([tour])
         if isinstance(tour, list):
-            itinerary.extend([e['id'] for e in tour])
+            itinerary.append([(e['start'], e['end']) for e in tour])
     
+    print(f'itinerary: {itinerary}')
     return itinerary
 
 
 def cluster(root, clusters, nodes): 
     """ Gather neighboring nodes.
 
-    Gather all nodes reachable from a given root node using paths smaller
-    than MAXPATH. Return a dict with the root and edges as ids
+    Gather all nodes reachable from a given root node using paths smallerthan MAXPATH.
+    Add nodes reachable from those nodes until reaching MAXTOUR. 
+    Return a dict with the root and edges as ids
 
     Positional arguments:
     root -- id of the root node.
@@ -120,28 +147,27 @@ def cluster(root, clusters, nodes):
     """
     # Get root node and validate it
     node = next((n for n in nodes if n.id == root), None)
-    clustered = {n for cluster in clusters for n in cluster}
-
+    clustered = {n for cluster in clusters for n in cluster['cluster']}
     if node is None:
        raise ValueError('Invalid root node')
-    if node in clustered:
-        return []
+    if node.id in clustered:
+        return None
     
-    cluster = set()
+    cluster = {node.id}
     visited = {node.id}
     children = [edge['end'] for edge in node.out_edges 
                 if edge['weight'] <= Settings.MAXPATH and not edge['end'] in clustered]
+    print(f'clustering node {root} children: {children}')
     while children:
-        child = next((n for n in nodes if n == children[0] and n not in cluster), None)
+        child = next((n.id for n in nodes if n.id == children[0] and n.id not in cluster), None)
         if child is None:
-            return {'root': root, 'cluster': cluster}
+            break
         children.remove(child)
-        cluster.add(children[0])
+        cluster.add(child)
         visited.add(child)
-        children.extend([edge['end'] for edge in child.out_edges 
-                         if edge['weight'] <= Settings.MAXPATH and not edge['end'] in children])
+        children.extend([e['end'] for c in nodes for e  in c.out_edges if c.id == child
+                         and e['weight'] <= Settings.MAXPATH and not e['end'] in children])
 
-     
     return {'root': root, 'cluster': cluster}
 
 def divide(cluster):     
@@ -167,7 +193,7 @@ def divide(cluster):
         elif len(children) == 0: # End of cluster
             # Divide cluster into equal parts if no fork exists
             divisor = math.ceil(len(cluster['cluster']) / Settings.MAXTOUR) # Number of parts
-            length = len(cluster['cluster'] // divisor) # Length of each part
+            length = len(cluster['cluster']) // divisor # Length of each part
 
             for i in range(divisor):
                 j = i * length
@@ -275,7 +301,6 @@ def spanning_tree(cluster):
             edge['end'] = edge['end'].entrance
         if isinstance(edge['start'], Supernode):
             edge['start'] = edge['start'].exit 
-
     return tree
 
 
@@ -360,19 +385,21 @@ def get_cluster_tour(tree, cluster, edges):
     
     Parameters:
     tree --- list of edges forming MST of cluster
-    cluster --- list of node objects to be visited
+    cluster --- dict of node objects to be visited
     edges --- list of all edges in graph
     """
     root = cluster['root']
-    cluster = {n for n in cluster['nodes']} # Convert cluster to set
-    #print(f'tree:{[e['id'] for e in tree]}\ncluster: {[n.id for n in cluster]}')
-    nodes = {n.id for n in cluster}
+    print(f'root: {root}')
+    cluster = {n.id for n in cluster['nodes']} # Convert cluster to set
     if isinstance(tree, Node): # Isolated node
         return tree
-    available_edges = [e for e in edges if e['start'] in nodes 
-                       and e['end'] in nodes 
+    available_edges = [e for e in edges if e['start'] in cluster 
+                       and e['end'] in cluster 
                        and e['weight'] <= Settings.MAXPATH]
     end_edges = [e for e in tree if not any(e['end'] == f['start'] for f in tree)] # Dead ends  
+    
+    print(f'available edges: {[(e['start'], e['end']) for e in available_edges]}')
+    print(f'end edges: {[(e['start'], e['end']) for e in end_edges]}')
     
     # Get outgoing edges from dead ends sorted by weight
     for edge in end_edges:
@@ -396,28 +423,34 @@ def get_cluster_tour(tree, cluster, edges):
     visited = set()
     branches = [[edge] for edge in tree if edge['start'] == root]
     visited.update([e['start'] for b in branches for e in b] + [e['end'] for b in branches for e in b])
-    finished = False
 
     # Begin adding edges to branches, adding branching paths to new_branches
+    finished = False
     while not finished: 
         finished = True
-
-        for branch in branches:
+        branches_copy = branches[:]
+        for i, branch in enumerate(branches_copy):
+            branch_copy = branch[:]
             next_edges = [edge for edge in tree if edge['start'] == branch[-1]['end']]
             if next_edges:
                 finished = False
-                branch.append(next_edges[0])
+                branch_copy.append(next_edges[0])
                 visited.add(next_edges[0]['end'])
             if len(next_edges) > 1:
                 for edge in next_edges[1:]:
-                    branches.append([edge]) 
+                    branch_copy.append([edge]) 
                     visited.add(edge['end'])
-            if visited == nodes:
+            if visited == cluster:
                 finished = True
-            
+            branches[i] = branch_copy
+    
+    print(f'branches: {branches}')    
     # Sort branches so the tour retraces the smallest number of steps first
-    itinerary = branches[0] # Trunk
-    branches.pop(0)
+    if branches:
+        itinerary = branches[0] # Trunk
+        branches.pop(0)
+    else:
+        itinerary = []
 
     while True:
         branches_from_itinerary = [b for b in branches 
@@ -431,9 +464,8 @@ def get_cluster_tour(tree, cluster, edges):
                 break
         itinerary.extend(last_branch)
         branches.remove(last_branch)
-            
-
-
+        
+      
     return itinerary
 
 

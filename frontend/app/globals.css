@@ -18,7 +18,8 @@ body {
   margin: 0%;
   overflow: auto;
 
-  background-image: url('/background.jpg');
+  /*background-image: url('/background.jpg');*/
+  background-color: black;
   background-size: cover;
   background-repeat: no-repeat;
 
@@ -205,6 +206,7 @@ form p {
   color: white;
   border-radius: 5px;
   box-shadow: 0px 0px 5px 1px var(--background);
+  z-index: 2;
 }
 
 .button:hover{
@@ -214,4 +216,13 @@ form p {
 iframe{
   height: 100vh;
   width: 100vw;
+}
+
+img{
+  position: absolute;
+  z-index: 1;
+  object-fit: contain;
+  max-width: 100%;
+  max-height: 100%;
+
 }

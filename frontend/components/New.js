@@ -12,7 +12,7 @@ function New({ parentCallback }) {
   const getSiteLists = async () => {
     console.log("getSiteLists");
     try {
-      const response = await fetch("http://127.0.0.1:5000/get-site-lists");
+      const response = await fetch("http://localhost:5000/get-site-lists");
       if (!response.ok) {
         throw new Error(`HTTP error. Status: ${response.status}`);
       }
@@ -113,7 +113,7 @@ function New({ parentCallback }) {
           {list.list && (
             <div id="list" className="list">
               {list.list.map((site) => (
-                <div className="check-border">
+                <div className="check-border" key={site.id}>
                   <div key={site.id} className="check-container">
                     <input
                       type="checkbox"
