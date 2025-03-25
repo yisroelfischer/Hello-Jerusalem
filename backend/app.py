@@ -71,8 +71,11 @@ def get_tours():
     for tour in result:
         split_tour = []
         for seg in tour:
-            if isinstance(seg, tuple):
-                split_tour.extend([seg[0], seg, seg[1]])
+            if isinstance(seg, tuple): 
+                if split_tour and split_tour[-1] == seg[0]:
+                    split_tour.extend([seg, seg[1]])
+                else:
+                    split_tour.extend([seg[0], seg, seg[1]])
             else:
                 split_tour.append(seg)
         tours.append([dictify(seg) for seg in split_tour])

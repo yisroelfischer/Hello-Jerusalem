@@ -57,6 +57,7 @@ export default function Tour({
     } else {
       setCurrentIndex((prev) => prev + 1);
     }
+    document.activeElement.blur();
   };
 
   useEffect(() => {
@@ -81,7 +82,9 @@ export default function Tour({
   return (
     <>
       {currentType === "site" && <img src={siteInfo} alt="Site preview" />}
-      {currentType === "path" && <Player info={pathInfo} setCurrentIndex={setCurrentIndex} />}
+      {currentType === "path" && (
+        <Player info={pathInfo} setCurrentIndex={setCurrentIndex} />
+      )}
       <button className="button" onClick={handleClick}>
         Next
       </button>
