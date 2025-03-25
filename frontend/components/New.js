@@ -64,11 +64,13 @@ function New({ parentCallback }) {
       const tab = tabs[i];
       console.log(tab);
       if (tab.id === list.tag) {
-        tab.style.color = "white";
-        tab.style.borderBottom = "thick solid";
+        tab.style.backgroundColor = "var(--background)";
+        tab.style.borderTop = '1px solid var(--accent)';
+        tab.style.borderBottom = '1px solid var(--accent)';
       } else {
-        tab.style.color = "inherit";
-        tab.style.borderBottom = "thick solid var(--accent)";
+        tab.style.backgroundColor = "transparent";
+        tab.style.borderTop = 'none';
+        tab.style.borderBottom = 'none';
       }
     }
   }, [list]);
@@ -93,7 +95,9 @@ function New({ parentCallback }) {
       />
       <form>
         <div className="form-head">
-          <p>Select the sites you want to visit and click Begin Tour</p>
+          <h2>Select the sites you want to visit</h2>
+        </div>
+        <div className="form-main">
           <div className="tabs" id="tabs">
             {sites.map((tag) => (
               <button
@@ -108,8 +112,6 @@ function New({ parentCallback }) {
               </button>
             ))}
           </div>
-        </div>
-        <div className="form-main">
           {list.list && (
             <div id="list" className="list">
               {list.list.map((site) => (
@@ -130,12 +132,11 @@ function New({ parentCallback }) {
               ))}
             </div>
           )}
-        </div>
-        <div className="form-foot">
           <button className="button" onClick={handleSubmit}>
-            Begin tour
+            Begin
           </button>
         </div>
+       
       </form>
     </div>
   );
