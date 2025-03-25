@@ -9,7 +9,8 @@ export default function Tour({
   toursLength,
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [src, setSrc] = useState(null);
+  const [pathInfo, setPathInfo] = useState(null);
+  const [siteInfo, setSiteInfo] = useState(null);
   const [currentType, setCurrentType] = useState("image");
 
   const getInfo = async () => {
@@ -68,10 +69,10 @@ export default function Tour({
       console.log("setting info: ", info);
       if (info.image) {
         setCurrentType("site");
-        setSrc(`sites/${info.name}.jpg`);
+        setSiteInfo(`sites/${info.name}.jpg`);
       } else if (info.path) {
         setCurrentType("path");
-        setSrc(info.path.url);
+        setPathInfo(info.path);
       }
     };
     a();
@@ -79,8 +80,8 @@ export default function Tour({
 
   return (
     <>
-      {currentType === "site" && <img src={src} alt="Site preview" />}
-      {currentType === "path" && <Player url={src} />}
+      {currentType === "site" && <img src={siteInfo} alt="Site preview" />}
+      {currentType === "path" && <Player info={pathInfo} setCurrentIndex={setCurrentIndex} />}
       <button className="button" onClick={handleClick}>
         Next
       </button>

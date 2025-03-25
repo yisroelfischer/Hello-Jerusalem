@@ -130,12 +130,19 @@ def get_site_info(site):
 def get_path_info(path):
     db = connect()
     cur = db.cursor()
-    cur.execute('SELECT url FROM paths WHERE start = ? AND end = ?', (path[0], path[1]))
-    url = cur.fetchone()
+    cur.execute('SELECT length, video_id, start_time, end_time FROM paths WHERE start = ? AND end = ?', (path[0], path[1]))
+    path_info = [
+        {'length': length, 
+        'videoId': video_id, 
+        'startTime': start_time, 
+        'endTime': end_time} 
+        for length, video_id, start_time, end_time in cur.fetchall()]
     db.close()
-    if not url:
-        return {'error': 'no response recieved'}, 400
-    return {'url': url[0]}
+    
+    if not path_info:
+        return {'error': 'no response recieved'}, 400 
+    path_info.sort(key=lambda x: int(x['length']))
+    return path_info[0]
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

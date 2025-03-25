@@ -3,10 +3,7 @@ import sys
 
 def main():
     if len(sys.argv) == 2:
-        if sys.argv[1] == 'fix':
-            fix_urls()
-        else:
-            add_site(sys.argv[1])
+        add_site(sys.argv[1])
     elif len(sys.argv) == 3 and sys.argv[1] == 'tag':
         add_tag(sys.argv[2])
     elif len(sys.argv) == 3:
@@ -52,10 +49,8 @@ def add_path(start, end):
     
     length = end_time - start_time
     
-    url = f'youtube.com/embed/{video_id}?start={start_time}&end={end_time}'
-    
-    cur.execute('INSERT INTO paths(start, end, length, url) VALUES(?, ?, ?, ?)', 
-                (start_id, end_id, length, url))
+    cur.execute('INSERT INTO paths(start, end, length, video_id, start_time, end_time) VALUES(?, ?, ?, ?, ?, ?)', 
+                (start_id, end_id, length, video_id, start_time, end_time))
     db.commit()
     db.close()
     
@@ -99,21 +94,7 @@ def add_tag(tag):
     db.commit()
     db.close()
     
-def fix_urls():
-    db= connect()
-    cur = db.cursor()
-    
-    cur.execute('SELECT id, url FROM paths')
-    urls = [{'id': id, 'url': url} for id, url in cur.fetchall()]
-    for url in urls:
-        print(url)
-        video_id = input('id: ')
-        start = input('start: ')
-        end = input('end: ')
-        new_url = f'youtube.com/embed/{video_id}?start={start}&end={end}'
-        cur.execute('UPDATE paths SET url = ? WHERE id = ?', (new_url, url['id']))
-    db.commit()
-    db.close()
+
     
 if __name__ == '__main__':
     main()     

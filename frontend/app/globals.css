@@ -1,7 +1,7 @@
 :root {
-  --background: #F2E4D8;
-  --foreground: #8C6C65;
-  --accent: #D9A577;
+  --background: #f2e4d8;
+  --foreground: #8c6c65;
+  --accent: #d9a577;
   --square-size: 90vh;
 }
 
@@ -32,13 +32,12 @@ body {
   justify-content: space-between;
 }
 
-*{
+* {
   font-family: inherit;
 }
 
-
 /* Header */
-header{
+header {
   position: sticky;
   width: 100%;
   height: fit-content;
@@ -48,18 +47,17 @@ header{
   place-content: center;
 }
 
-.logo{
+.logo {
   border-radius: 50%;
   width: 200px;
-  margin: 10px
+  margin: 10px;
 }
-
 
 /* Main page */
 main {
   max-height: 80vh;
   color: var(--foreground);
-  display: flex; 
+  display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
@@ -67,15 +65,14 @@ main {
   flex: 1;
 }
 
-.hat{
+.hat {
   width: 50px;
   padding: 25px;
   align-self: baseline;
 }
 
-
 /*New*/
-form{
+form {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -98,9 +95,8 @@ form{
   padding: 2px;
 }
 
-
 form p {
-  padding: 20px 15px 15px ;
+  padding: 20px 15px 15px;
   margin: 0px;
   height: fit-content;
   font-size: medium;
@@ -117,8 +113,7 @@ form p {
   justify-content: space-around;
 }
 
-
-.tab{
+.tab {
   font-size: medium;
   font-family: Arial, Helvetica, sans-serif;
   color: var(--foreground);
@@ -132,15 +127,15 @@ form p {
   border: none;
 }
 
-.form-main{
+.form-main {
   width: 100%;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: var(--foreground) transparent ;
+  scrollbar-color: var(--foreground) transparent;
 }
 
-.list{
+.list {
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
@@ -152,17 +147,16 @@ form p {
   max-height: 80vh;
 }
 
-.check-border{
+.check-border {
   margin: 5px;
-  
 }
 
-.check-border :hover{
+.check-border :hover {
   cursor: pointer;
-  box-shadow: 0px 0px 3px 3px var(--accent)
+  box-shadow: 0px 0px 3px 3px var(--accent);
 }
 
-.check-container{
+.check-container {
   border-radius: 5px;
   width: fit-content;
   max-width: 100%;
@@ -172,21 +166,20 @@ form p {
   align-items: center;
 }
 
-.check-label{
+.check-label {
   padding: 5px;
-
 }
 
-.check-container :hover{
+.check-container :hover {
   box-shadow: none;
 }
 
-.check{
+.check {
   margin: 5px;
   accent-color: var(--accent);
 }
 
-.form-foot{
+.form-foot {
   box-sizing: border-box;
   width: 100%;
   border-radius: 0px 0px 5px 5px;
@@ -196,8 +189,7 @@ form p {
   justify-content: center;
 }
 
-.button{
-
+.button {
   font-size: large;
   padding: 5px;
   margin: 15px;
@@ -209,20 +201,52 @@ form p {
   z-index: 2;
 }
 
-.button:hover{
-  background-color: #8C6C65;
+.button:hover {
+  background-color: #8c6c65;
 }
 
-iframe{
+iframe {
   height: 100vh;
   width: 100vw;
 }
 
-img{
+img {
   position: absolute;
   z-index: 1;
   object-fit: contain;
   max-width: 100%;
   max-height: 100%;
+}
 
+.player-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+}
+
+.loader-container {
+  align-self: center;
+  place-self: center;
+  height: 25px;
+  width: 100px;
+}
+
+.loader {
+  aspect-ratio: 4;
+  --_g: no-repeat
+    radial-gradient(circle closest-side, var(--background) 90%, transparent);
+  background: var(--_g) 0% 50%, var(--_g) 50% 50%, var(--_g) 100% 50%;
+  background-size: calc(100% / 3) 100%;
+  animation: l7 1s infinite linear;
+}
+@keyframes l7 {
+  33% {
+    background-size: calc(100% / 3) 0%, calc(100% / 3) 100%, calc(100% / 3) 100%;
+  }
+  50% {
+    background-size: calc(100% / 3) 100%, calc(100% / 3) 0%, calc(100% / 3) 100%;
+  }
+  66% {
+    background-size: calc(100% / 3) 100%, calc(100% / 3) 100%, calc(100% / 3) 0%;
+  }
 }
