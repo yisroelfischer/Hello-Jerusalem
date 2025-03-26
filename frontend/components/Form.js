@@ -65,12 +65,10 @@ export default function Form({ parentCallback }) {
       console.log(tab);
       if (tab.id === list.tag) {
         tab.style.backgroundColor = "var(--background)";
-        tab.style.borderTop = '1px solid var(--accent)';
-        tab.style.borderBottom = '1px solid var(--accent)';
+        tab.style.boxShadow = '0px 0px 15px 0px var(--foreground)'
       } else {
         tab.style.backgroundColor = "transparent";
-        tab.style.borderTop = 'none';
-        tab.style.borderBottom = 'none';
+        tab.style.boxShadow = 'none'
       }
     }
   }, [list]);
@@ -136,7 +134,6 @@ export default function Form({ parentCallback }) {
             Begin
           </button>
         </div>
-       
       </form>
     </div>
   );
