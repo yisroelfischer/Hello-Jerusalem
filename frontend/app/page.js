@@ -50,7 +50,7 @@ export default function App() {
   };
 
   return (
-    <main>
+    <div>
       {state === 0 && 
         <Home>
           <Form parentCallback={(v) => handleClick(v)} />
@@ -66,6 +66,6 @@ export default function App() {
           <Chat />
         </Tour>
       )}
-    </main>
+    </div>
   );
 }

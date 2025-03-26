@@ -35,34 +35,36 @@ body {
 * {
   font-family: inherit;
 }
-
-/* Header */
-header {
-  position: sticky;
-  width: 100%;
-  height: fit-content;
-  max-height: 20vh;
-  display: flex;
-  flex-direction: row;
-  place-content: center;
-}
-
-.logo {
-  border-radius: 50%;
-  width: 200px;
-  margin: 10px;
-}
-
 /* Main page */
-main {
-  max-height: 80vh;
+
+.container{
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
   color: var(--foreground);
+}
+
+#welcome-message{
+  height: fit-content;
+  align-self: flex-start;
+  padding: 25px;
+  color: inherit;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-around;
   align-items: center;
-  justify-self: flex-end;
-  flex: 1;
+}
+
+h1{
+  width: 50%;
+}
+
+p{
+  text-align: justify;
+  width: 50%;
 }
 
 .hat {
@@ -71,8 +73,10 @@ main {
   align-self: baseline;
 }
 
-/*New*/
+/*Form*/
 form {
+  justify-self: center;
+  align-self: center;
   background-color: var(--background);
   display: flex;
   flex-direction: column;
@@ -80,7 +84,7 @@ form {
   justify-content: space-between;
   width: fit-content;
   max-width: 90vw;
-  height: 100%;
+  height: fit-content;
   overflow: auto;
   padding: 25px;
   border-radius: 15px;
@@ -97,6 +101,7 @@ form {
 }
 
 form h2 {
+  color: inherit;
   margin: 0px;
   height: fit-content;
   font-size: large;
@@ -190,6 +195,10 @@ form h2 {
   accent-color: var(--accent);
 }
 
+.placeholder{
+  flex-basis: 1;
+  padding-left: 33vw;
+}
 
 .button {
   height: fit-content;
