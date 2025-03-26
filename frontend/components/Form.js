@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Chat from "./Chat";
 import Error from "./Error";
 
-function New({ parentCallback }) {
+export default function Form({ parentCallback }) {
   console.log("hello");
   const [picked, setPicked] = useState([]);
   const [sites, setSites] = useState([]);
@@ -141,5 +141,3 @@ function New({ parentCallback }) {
     </div>
   );
 }
-
-export default New;

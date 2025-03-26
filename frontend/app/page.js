@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Home from "../components/Home";
-import New from "../components/New";
+import Form from "../components/Form";
 import Tour from "../components/Tour";
 import "./globals.css";
 import Chat from "@/components/Chat";
@@ -13,9 +13,6 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [state, setState] = useState(0);
 
-  const enter = (v) => {
-    v === 0 ? setState(1) : getTours();
-  };
 
   const getTours = async (sites) => {
     try {
@@ -37,7 +34,7 @@ export default function App() {
   };
 
   const handleClick = async (v) => {
-    if (state === 1) {
+    if (state === 0) {
       try {
         console.log(`setting tour: ${v}`);
         const res = await getTours(v);
@@ -45,7 +42,7 @@ export default function App() {
         console.log("res = ", res);
         setTours(res);
         setLoading(false);
-        setState(2);
+        setState(1);
       } catch (error) {
         console.error("handleClick state 1 failed");
       }
@@ -54,9 +51,11 @@ export default function App() {
 
   return (
     <main>
-      {state === 0 && <Home parentCallback={(v) => enter(v)} />}
-      {state === 1 && <New parentCallback={(v) => handleClick(v)} />}
-      {state === 2 && tours && (
+      {state === 0 && 
+        <Home>
+          <Form parentCallback={(v) => handleClick(v)} />
+        </Home>}
+      {state === 1 && tours && (
         <Tour
           tour={tours[tourIndex]}
           setState={setState}
@@ -64,7 +63,7 @@ export default function App() {
           tourIndex={tourIndex}
           toursLength={tours.length}
         >
-          <Chat></Chat>
+          <Chat />
         </Tour>
       )}
     </main>
