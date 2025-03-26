@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import Chat from "./Chat";
 import Error from "./Error";
 
 export default function Form({ parentCallback }) {
@@ -65,10 +64,10 @@ export default function Form({ parentCallback }) {
       console.log(tab);
       if (tab.id === list.tag) {
         tab.style.backgroundColor = "var(--background)";
-        tab.style.boxShadow = '0px 0px 15px 0px var(--foreground)'
+        tab.style.boxShadow = "0px 0px 15px 0px var(--foreground)";
       } else {
         tab.style.backgroundColor = "transparent";
-        tab.style.boxShadow = 'none'
+        tab.style.boxShadow = "none";
       }
     }
   }, [list]);
@@ -84,57 +83,49 @@ export default function Form({ parentCallback }) {
   };
 
   return (
-    <div className="container">
-      <Chat
-        context={`The user is on a page where they can select from a list of sites they want
-            to visit. When they click the Begin Tour button, the site will automatically calculate
-            a tour visiting those sites from the videos in its database. The sites are arranged by
-            tags. The user can see the list of sites for each tag by clicking or tapping its tab`}
-      />
-      <form>
-        <div className="form-head">
-          <h2>Select the sites you want to visit</h2>
+    <form>
+      <div className="form-head">
+        <h2>Select the sites you want to visit</h2>
+      </div>
+      <div className="form-main">
+        <div className="tabs" id="tabs">
+          {sites.map((tag) => (
+            <button
+              type="button"
+              key={tag.tag}
+              className="tab"
+              id={tag.tag}
+              value={tag.tag}
+              onClick={handleClick}
+            >
+              {tag.tag}
+            </button>
+          ))}
         </div>
-        <div className="form-main">
-          <div className="tabs" id="tabs">
-            {sites.map((tag) => (
-              <button
-                type="button"
-                key={tag.tag}
-                className="tab"
-                id={tag.tag}
-                value={tag.tag}
-                onClick={handleClick}
-              >
-                {tag.tag}
-              </button>
+        {list.list && (
+          <div id="list" className="list">
+            {list.list.map((site) => (
+              <div className="check-border" key={site.id}>
+                <div key={site.id} className="check-container">
+                  <input
+                    type="checkbox"
+                    className="check"
+                    id={site.id}
+                    value={site.id}
+                    onChange={handleChange}
+                  ></input>
+                  <label htmlFor={site.id} className="check-label">
+                    {site.name}
+                  </label>
+                </div>
+              </div>
             ))}
           </div>
-          {list.list && (
-            <div id="list" className="list">
-              {list.list.map((site) => (
-                <div className="check-border" key={site.id}>
-                  <div key={site.id} className="check-container">
-                    <input
-                      type="checkbox"
-                      className="check"
-                      id={site.id}
-                      value={site.id}
-                      onChange={handleChange}
-                    ></input>
-                    <label htmlFor={site.id} className="check-label">
-                      {site.name}
-                    </label>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          <button className="button" onClick={handleSubmit}>
-            Begin
-          </button>
-        </div>
-      </form>
-    </div>
+        )}
+        <button className="button" onClick={handleSubmit}>
+          Begin
+        </button>
+      </div>
+    </form>
   );
 }

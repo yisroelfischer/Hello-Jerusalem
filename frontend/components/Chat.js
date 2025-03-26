@@ -1,99 +1,99 @@
-import { useState, useEffect  } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai'
-import ChatBot, {Button} from 'react-chatbotify';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { useState, useRef, useEffect } from "react";
+import { GoogleGenAI } from "@google/genai";
 
-
-export default function Chat({context=null}){
-    const [model, setModel] = useState(null);
-    const hat = '/yossi/hat.png'
-    const settings = {
-        general:{
-            primaryColor: '#D9A577',
-            secondaryColor: '#F2E4D8',
-            showFooter: false,
-            fontFamily:'Arial',
-            flowStartTrigger: 'ON_CHATBOT_INTERACT'
-        },
-        tooltip: {
-            mode: "START",
-            text: 'Any questions?'
-        },
-        chatHistory:{
-            disabled: true,
-        },
-        chatButton: {
-            icon: hat
-        },
-        header: {
-            title: (<h1>Yossi</h1>),
-            avatar: hat,
-            buttons: [Button.CLOSE_CHAT_BUTTON]
-        },
-        botBubble: {
-            avatar: hat
-        }
-    }
+export default function Chat({ localContext = null }) {
+  const history = useRef([]);
+  const [response, setResponse] = useState("");
+  if (!localContext){
     
-    //Setup
-    useEffect(()=>{
-        const setup = async() =>{
-        // Fetch API key
-        const getKey = (await fetch('http://localhost:5000/gemini-api-key'));
-        const key = await getKey.json();
-        if(key.error){
-            return 'Error'
-            }
-        
-        // Initialize model
-        const genAI =new GoogleGenerativeAI(key.key);
-        const m = genAI.getGenerativeModel({
-            model: "gemini-2.0-flash",
-            systemInstruction: `You are a tour guide for 'Hello, Jerusalem', a web app for 
-            taking virtual walking tours of Jerusalem. Your name is Yossi. You are 
-            knowledgeable, friendly,and funny, with a stereotypically Israeli personality. ${context}`,
-            });
-        setModel(m)
-        }
-        setup();
-    }, [])
+  }
+  
 
+  const submitQuestion = async (question) => {
+    setResponse("");
+    const chat = setup(history);
+    if (!chat || !question.trim()) {
+      console.error("Chat is not initialized yet.");
+      return;
+    }
+    try {
+      console.log("awaiting response");
+      const res = await chat.sendMessage({
+        message: question,
+      });
+      let text = await res;
+      text = text.text.split("");
+      for (let i = 0; i < text.length; i++) {
+        setTimeout(() => setResponse((prev) => prev + text[i]), 50);
+      }
 
-    // Chat functionality
-    const getResponse = async (params) => {
-        if (!model){
-            return Error('Setup failed')
-        }
-        let offset = 0;
-        let text = '';
-        const res = await model.generateContentStream(params.userInput);
-        for await (const chunk of res.stream){
-            text += chunk.text();
-            for(let i = offset; i < text.length; i++){
-                await params.streamMessage(text.slice(0, i + 1));
-                await new Promise(resolve => setTimeout(resolve, 30));
-            }
-            offset += chunk.text().length;
-            }
-        await params.endStreamMessage();
-        }
+      console.log("response recieved");
+      history.current.push(
+        { role: "user", parts: [{ text: question }] },
+        { role: "model", parts: [{ text: res }] }
+      );
+    } catch (error) {
+      console.log(`submitQuestion failed. Hi.  ${error}`);
+      console.log(history);
+    }
+  };
 
-    const flow = {
-        start: {
-            message: 'What\'s up?',
-            path : 'loop'
-        },
-        loop: {
-            message: async (params) => {
-                return await getResponse(params)
-            },
-            path: 'loop'
-        }
+  const setup = async(type, chatHistory=null) => {
+    // Fetch API key
+    const getKey = await fetch("http://localhost:5000/gemini-api-key");
+    const key = await getKey.json();
+    if (key.error) {
+      console.log(key.error);
+      console.error("Error getting key");
+      return;
     }
 
-    return (
-        <div className='chat'>
-        <ChatBot id='Yossi' flow={flow} settings={settings}/>
-        </div>
-    )
+    // Initialize model
+    const genAI = new GoogleGenAI({ apiKey: key.key });
+    const newChat = genAI.chats.create({
+      model: "gemini-2.0-flash",
+      systemInstruction: context,
+      history: chatHistory,
+    });
+
+    return newChat;
+  }
     
+
+  return (
+    <>
+      {response && <Response response={response} />}
+      <Input submitQuestion={submitQuestion} />
+    </>
+  );
+}
+
+function Input({ submitQuestion }) {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log("input recieved");
+    const question = e.target[0].value;
+    if (!question) return;
+    submitQuestion(question);
+    e.target.reset();
+  };
+
+  return (
+    <form className="input" onSubmit={handleSubmit}>
+      <input type="text" placeholder="Ask Yossi anything" />
+      <button type="submit">
+        <FontAwesomeIcon icon={faPaperPlane} />
+      </button>
+    </form>
+  );
+}
+
+function Response({ response }) {
+  return (
+    <div className="response">
+      <p>{response}</p>
+    </div>
+  );
 }
