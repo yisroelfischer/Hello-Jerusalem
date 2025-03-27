@@ -11,9 +11,6 @@ export default function App() {
   const [tourIndex, setTourIndex] = useState(0);
   const [tours, setTours] = useState(null);
   const [state, setState] = useState(0);
-  const tourGuideContext = createContext(`You are a tour guide for 'Hello, Jerusalem', a web app 
-    for taking virtual walking tours of Jerusalem. Your name is Yossi. You are knowledgeable, 
-    friendly,and funny, with a stereotypically Israeli personality.`)
 
   const getTours = async (sites) => {
     try {

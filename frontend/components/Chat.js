@@ -1,46 +1,29 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useContext } from "react";
 import { GoogleGenAI } from "@google/genai";
 
 export default function Chat({ localContext = null }) {
   const history = useRef([]);
   const [response, setResponse] = useState("");
-  if (!localContext){
-    
-  }
-  
 
   const submitQuestion = async (question) => {
     setResponse("");
-    const chat = setup(history);
-    if (!chat || !question.trim()) {
-      console.error("Chat is not initialized yet.");
-      return;
+    const res = await getResponse(question);
+    const text = res.split("");
+    for (let i = 0; i < text.length; i++) {
+      setTimeout(() => setResponse((prev) => prev + text[i]), 50);
     }
-    try {
-      console.log("awaiting response");
-      const res = await chat.sendMessage({
-        message: question,
-      });
-      let text = await res;
-      text = text.text.split("");
-      for (let i = 0; i < text.length; i++) {
-        setTimeout(() => setResponse((prev) => prev + text[i]), 50);
-      }
 
-      console.log("response recieved");
-      history.current.push(
-        { role: "user", parts: [{ text: question }] },
-        { role: "model", parts: [{ text: res }] }
-      );
-    } catch (error) {
-      console.log(`submitQuestion failed. Hi.  ${error}`);
-      console.log(history);
-    }
+    console.log("response recieved");
+    history.current.push(
+      { role: "user", parts: [{ text: question }] },
+      { role: "model", parts: [{ text: res }] }
+    );
   };
 
-  const setup = async(type, chatHistory=null) => {
+  const getResponse = async (question) => {
+    console.log("getResponse");
     // Fetch API key
     const getKey = await fetch("http://localhost:5000/gemini-api-key");
     const key = await getKey.json();
@@ -52,15 +35,38 @@ export default function Chat({ localContext = null }) {
 
     // Initialize model
     const genAI = new GoogleGenAI({ apiKey: key.key });
-    const newChat = genAI.chats.create({
-      model: "gemini-2.0-flash",
-      systemInstruction: context,
-      history: chatHistory,
-    });
 
-    return newChat;
-  }
-    
+    if (localContext) {
+      context = context + localContext;
+    }
+
+    if (history.current) {
+    console.log(history.current);
+      const chat = genAI.chats.create({
+        model: "gemini-2.0-flash",
+        config: {
+          systemInstruction: `You are a tour guide for 'Hello, Jerusalem', a web app 
+    for taking virtual walking tours of Jerusalem. Your name is Yossi. You are knowledgeable, 
+    friendly,and funny, with a stereotypically Israeli personality.`,
+        },
+        history: history.current,
+      });
+      const res = await chat.sendMessage({ message: question });
+      return res.text;
+    } else {
+      const message = await genAI.model.generateContent({
+        model: "gemini-2.0-flash",
+        config: {
+          systemInstruction: `You are a tour guide for 'Hello, Jerusalem', a web app 
+    for taking virtual walking tours of Jerusalem. Your name is Yossi. You are knowledgeable, 
+    friendly,and funny, with a stereotypically Israeli personality.`,
+        },
+        contents: question,
+      });
+      const res = await message;
+      return res.text;
+    }
+  };
 
   return (
     <>
