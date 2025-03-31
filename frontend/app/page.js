@@ -4,6 +4,7 @@ import React, { useState, createContext } from "react";
 import Home from "../components/Home";
 import Form from "../components/Form";
 import Tour from "../components/Tour";
+import TourMenu from "@/components/TourMenu";
 import Chat from "../components/Chat";
 import "./globals.css";
 
@@ -47,12 +48,13 @@ export default function App() {
   };
 
   return (
-    <div>
-      {state === 0 && 
+    <div className="tour-container">
+      {state === 0 && (
         <Home>
           <Form parentCallback={(v) => handleClick(v)} />
-            <Chat />
-        </Home>}
+          <Chat />
+        </Home>
+      )}
       {state === 1 && tours && (
         <Tour
           tour={tours[tourIndex]}
@@ -60,9 +62,7 @@ export default function App() {
           setTourIndex={setTourIndex}
           tourIndex={tourIndex}
           toursLength={tours.length}
-        >
-          <Chat />
-        </Tour>
+        />
       )}
     </div>
   );

@@ -83,7 +83,7 @@ export default function Form({ parentCallback }) {
   };
 
   return (
-    <form>
+    <form className="sites-form">
       <div className="form-head">
         <h2>Select the sites you want to visit</h2>
       </div>
@@ -122,7 +122,7 @@ export default function Form({ parentCallback }) {
             ))}
           </div>
         )}
-        <button className="button" onClick={handleSubmit}>
+        <button className="button begin-button" onClick={handleSubmit}>
           Begin
         </button>
       </div>

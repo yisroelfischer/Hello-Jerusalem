@@ -41,7 +41,7 @@ export default function Chat({ localContext = null }) {
     }
 
     if (history.current) {
-    console.log(history.current);
+      console.log(history.current);
       const chat = genAI.chats.create({
         model: "gemini-2.0-flash",
         config: {
@@ -69,10 +69,10 @@ export default function Chat({ localContext = null }) {
   };
 
   return (
-    <>
-      {response && <Response response={response} />}
-      <Input submitQuestion={submitQuestion} />
-    </>
+    <div className="chat">
+      {response && <Response className="response" response={response} />}
+      <Input className="input" submitQuestion={submitQuestion} />
+    </div>
   );
 }
 
@@ -87,10 +87,10 @@ function Input({ submitQuestion }) {
   };
 
   return (
-    <form className="input" onSubmit={handleSubmit}>
-      <input type="text" placeholder="Ask Yossi anything" />
-      <button type="submit">
-        <FontAwesomeIcon icon={faPaperPlane} />
+    <form className="chat-input" onSubmit={handleSubmit}>
+      <input type="text" className="input-field" autoFocus="true"/>
+      <button className="send-button" type="submit">
+        <FontAwesomeIcon className="plane-icon" icon={faPaperPlane} />
       </button>
     </form>
   );

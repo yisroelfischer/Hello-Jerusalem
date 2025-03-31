@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Player from "./Player";
+import Chat from "./Chat";
+import TourMenu from "./TourMenu";
 
 export default function Tour({
   setState,
@@ -7,11 +9,13 @@ export default function Tour({
   tourIndex,
   setTourIndex,
   toursLength,
+  children,
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [pathInfo, setPathInfo] = useState(null);
   const [siteInfo, setSiteInfo] = useState(null);
   const [currentType, setCurrentType] = useState("image");
+  const [buttonText, setButtonText] = useState('Continue')
 
   const getInfo = async () => {
     console.log("tour:", tour, "currentIndex", currentIndex);
@@ -61,7 +65,7 @@ export default function Tour({
   };
 
   useEffect(() => {
-    const a = async () => {
+    const setInfo = async () => {
       console.log("useEffect");
       const info = await getInfo();
       if (!info) {
@@ -76,18 +80,25 @@ export default function Tour({
         setPathInfo(info.path);
       }
     };
-    a();
+    setInfo();
   }, [currentIndex, tour]);
 
   return (
     <>
-      {currentType === "site" && <img src={siteInfo} alt="Site preview" />}
+      {currentType === "site" && (
+        <img className="site-image" src={siteInfo} alt="Site preview" />
+      )}
       {currentType === "path" && (
         <Player info={pathInfo} setCurrentIndex={setCurrentIndex} />
       )}
-      <button className="button" onClick={handleClick}>
-        Next
-      </button>
+      <TourMenu
+        className="tour-menu"
+        handleClick={handleClick}
+        isLastSite={isLastSite}
+        isLastTour={isLastTour}
+      >
+        <Chat className="tour-chat" />
+      </TourMenu>
     </>
   );
 }
